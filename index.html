@@ -184,10 +184,6 @@ hr {
 
 <div class="container">
 
-  <!-- =====================================================
-       PETITION INTRODUCTION
-       ===================================================== -->
-
   <div class="card">
 
     <h1>🇳🇬 Nigerian Community Continuation Petition – The Gambia</h1>
@@ -202,10 +198,6 @@ Please provide your accurate information and sign the petition only once. Your i
 
   </div>
 
-
-  <!-- =====================================================
-       PUBLIC PETITION FORM
-       ===================================================== -->
 
   <div class="card">
 
@@ -302,10 +294,6 @@ Please provide your accurate information and sign the petition only once. Your i
   </div>
 
 
-  <!-- =====================================================
-       ADMINISTRATOR
-       ===================================================== -->
-
   <div class="card">
 
     <h2>Administrator</h2>
@@ -314,11 +302,6 @@ Please provide your accurate information and sign the petition only once. Your i
       Administrator access is restricted to the authorized petition administrator.
     </p>
 
-
-    <!-- ===================================================
-         ADMIN LOGIN FORM
-         PASSWORD ONLY
-         =================================================== -->
 
     <div id="adminLoginForm">
 
@@ -359,10 +342,6 @@ Please provide your accurate information and sign the petition only once. Your i
 
     </div>
 
-
-    <!-- ===================================================
-         ADMIN DASHBOARD
-         =================================================== -->
 
     <div id="adminPanel" class="hidden">
 
@@ -579,7 +558,6 @@ function clearMessage(element) {
 
 /* =========================================================
    HTML ESCAPE
-   Protects administrator table output.
    ========================================================= */
 
 function escapeHTML(value) {
@@ -689,42 +667,40 @@ document
       clearMessage(message);
 
 
-      const result =
-        await supabaseClient
-          .from("petition_supporters")
-          .insert([
-            {
-              full_name:
-                fullName,
+      try {
 
-              nigerian_state:
-                nigerianState,
+        const result =
+          await supabaseClient
+            .from("petition_supporters")
+            .insert([
+              {
+                full_name:
+                  fullName,
 
-              local_government_area:
-                localGovernmentArea,
+                nigerian_state:
+                  nigerianState,
 
-              ethnic_association:
-                ethnicAssociation,
+                local_government_area:
+                  localGovernmentArea,
 
-              phone_number:
-                phoneNumber,
+                ethnic_association:
+                  ethnicAssociation,
 
-              email:
-                email
-            }
-          ]);
+                phone_number:
+                  phoneNumber,
+
+                email:
+                  email
+              }
+            ]);
 
 
-      if (result.error) {
+        if (result.error) {
 
-        showMessage(
-          message,
-          "Submission failed: " +
-          result.error.message,
-          false
-        );
+          throw result.error;
 
-      } else {
+        }
+
 
         showMessage(
           message,
@@ -737,13 +713,23 @@ document
           .getElementById("petitionForm")
           .reset();
 
+      } catch (error) {
+
+        showMessage(
+          message,
+          "Submission failed: " +
+          (error?.message || "Unknown error"),
+          false
+        );
+
+      } finally {
+
+        button.disabled = false;
+
+        button.textContent =
+          "Sign the Petition";
+
       }
-
-
-      button.disabled = false;
-
-      button.textContent =
-        "Sign the Petition";
 
     }
   );
@@ -778,26 +764,38 @@ async function loadSupporters() {
   );
 
 
-  const result =
-    await supabaseClient
-      .from("petition_supporters")
-      .select(
-        "id,full_name,nigerian_state,local_government_area,ethnic_association,phone_number,email,created_at"
-      )
-      .order(
-        "created_at",
-        {
-          ascending: false
-        }
-      );
+  try {
+
+    const result =
+      await supabaseClient
+        .from("petition_supporters")
+        .select(
+          "id,full_name,nigerian_state,local_government_area,ethnic_association,phone_number,email,created_at"
+        )
+        .order(
+          "created_at",
+          {
+            ascending: false
+          }
+        );
 
 
-  loading.classList.add(
-    "hidden"
-  );
+    if (result.error) {
+
+      throw result.error;
+
+    }
 
 
-  if (result.error) {
+    allSupporters =
+      result.data || [];
+
+
+    renderSupporters(
+      allSupporters
+    );
+
+  } catch (error) {
 
     document
       .getElementById(
@@ -810,22 +808,17 @@ async function loadSupporters() {
     showMessage(
       databaseMessage,
       "Unable to load database: " +
-      result.error.message,
+      (error?.message || "Unknown error"),
       false
     );
 
-    return;
+  } finally {
+
+    loading.classList.add(
+      "hidden"
+    );
 
   }
-
-
-  allSupporters =
-    result.data || [];
-
-
-  renderSupporters(
-    allSupporters
-  );
 
 }
 
@@ -868,51 +861,13 @@ function renderSupporters(
 
         return `
           <tr>
-
-            <td>
-              ${escapeHTML(
-                item.full_name
-              )}
-            </td>
-
-            <td>
-              ${escapeHTML(
-                item.nigerian_state
-              )}
-            </td>
-
-            <td>
-              ${escapeHTML(
-                item.local_government_area
-              )}
-            </td>
-
-            <td>
-              ${escapeHTML(
-                item.ethnic_association
-              )}
-            </td>
-
-            <td>
-              ${escapeHTML(
-                item.phone_number
-              )}
-            </td>
-
-            <td>
-              ${escapeHTML(
-                item.email
-              )}
-            </td>
-
-            <td>
-              ${escapeHTML(
-                new Date(
-                  item.created_at
-                ).toLocaleString()
-              )}
-            </td>
-
+            <td>${escapeHTML(item.full_name)}</td>
+            <td>${escapeHTML(item.nigerian_state)}</td>
+            <td>${escapeHTML(item.local_government_area)}</td>
+            <td>${escapeHTML(item.ethnic_association)}</td>
+            <td>${escapeHTML(item.phone_number)}</td>
+            <td>${escapeHTML(item.email)}</td>
+            <td>${escapeHTML(new Date(item.created_at).toLocaleString())}</td>
           </tr>
         `;
 
@@ -996,73 +951,85 @@ document
 
 
 /* =========================================================
-   ADMIN AUTHENTICATION
+   CHECK ADMIN SESSION
    ========================================================= */
 
 async function checkAdminSession() {
 
-  const result =
-    await supabaseClient.auth.getSession();
+  try {
+
+    const result =
+      await supabaseClient.auth.getSession();
 
 
-  const session =
-    result.data.session;
+    const session =
+      result.data &&
+      result.data.session;
 
 
-  if (
-    session &&
-    session.user &&
-    session.user.email &&
-    session.user.email.toLowerCase() ===
-      ADMIN_EMAIL.toLowerCase()
-  ) {
+    if (
+      session &&
+      session.user &&
+      session.user.email &&
+      session.user.email.toLowerCase() ===
+        ADMIN_EMAIL.toLowerCase()
+    ) {
 
-    document
-      .getElementById(
-        "adminPanel"
-      )
-      .classList.remove(
-        "hidden"
-      );
-
-
-    document
-      .getElementById(
-        "adminLoginForm"
-      )
-      .classList.add(
-        "hidden"
-      );
+      document
+        .getElementById(
+          "adminPanel"
+        )
+        .classList.remove(
+          "hidden"
+        );
 
 
-    document
-      .getElementById(
-        "loggedInAdmin"
-      )
-      .textContent =
-      session.user.email;
+      document
+        .getElementById(
+          "adminLoginForm"
+        )
+        .classList.add(
+          "hidden"
+        );
 
 
-    await loadSupporters();
-
-  } else {
-
-    document
-      .getElementById(
-        "adminPanel"
-      )
-      .classList.add(
-        "hidden"
-      );
+      document
+        .getElementById(
+          "loggedInAdmin"
+        )
+        .textContent =
+        session.user.email;
 
 
-    document
-      .getElementById(
-        "adminLoginForm"
-      )
-      .classList.remove(
-        "hidden"
-      );
+      await loadSupporters();
+
+    } else {
+
+      document
+        .getElementById(
+          "adminPanel"
+        )
+        .classList.add(
+          "hidden"
+        );
+
+
+      document
+        .getElementById(
+          "adminLoginForm"
+        )
+        .classList.remove(
+          "hidden"
+        );
+
+    }
+
+  } catch (error) {
+
+    console.error(
+      "Session check failed:",
+      error
+    );
 
   }
 
@@ -1073,108 +1040,165 @@ async function checkAdminSession() {
    PASSWORD-ONLY ADMIN LOGIN
    ========================================================= */
 
+async function loginAdmin() {
+
+  const message =
+    document.getElementById(
+      "loginMessage"
+    );
+
+
+  const button =
+    document.getElementById(
+      "loginButton"
+    );
+
+
+  const password =
+    document
+      .getElementById(
+        "adminPassword"
+      )
+      .value;
+
+
+  if (!password) {
+
+    showMessage(
+      message,
+      "Please enter the admin password.",
+      false
+    );
+
+    return;
+
+  }
+
+
+  button.disabled = true;
+
+  button.textContent =
+    "Signing in...";
+
+
+  clearMessage(
+    message
+  );
+
+
+  try {
+
+    const result =
+      await supabaseClient.auth
+        .signInWithPassword({
+
+          email:
+            ADMIN_EMAIL,
+
+          password:
+            password
+
+        });
+
+
+    if (result.error) {
+
+      throw result.error;
+
+    }
+
+
+    const user =
+      result.data &&
+      result.data.user;
+
+
+    if (
+      !user ||
+      !user.email ||
+      user.email.toLowerCase() !==
+        ADMIN_EMAIL.toLowerCase()
+    ) {
+
+      await supabaseClient.auth.signOut();
+
+      throw new Error(
+        "This account is not authorized as the petition administrator."
+      );
+
+    }
+
+
+    document
+      .getElementById(
+        "adminPassword"
+      )
+      .value = "";
+
+
+    document
+      .getElementById(
+        "adminLoginForm"
+      )
+      .classList.add(
+        "hidden"
+      );
+
+
+    document
+      .getElementById(
+        "adminPanel"
+      )
+      .classList.remove(
+        "hidden"
+      );
+
+
+    document
+      .getElementById(
+        "loggedInAdmin"
+      )
+      .textContent =
+      user.email;
+
+
+    showMessage(
+      message,
+      "Admin login successful.",
+      true
+    );
+
+
+    await loadSupporters();
+
+  } catch (error) {
+
+    showMessage(
+      message,
+      "Admin login failed: " +
+      (error?.message || "Unknown error"),
+      false
+    );
+
+  } finally {
+
+    button.disabled = false;
+
+    button.textContent =
+      "Secure Admin Login";
+
+  }
+
+}
+
+
 document
   .getElementById(
     "loginButton"
   )
   .addEventListener(
     "click",
-    async function() {
-
-      const message =
-        document.getElementById(
-          "loginMessage"
-        );
-
-
-      const password =
-        document
-          .getElementById(
-            "adminPassword"
-          )
-          .value;
-
-
-      if (!password) {
-
-        showMessage(
-          message,
-          "Please enter the admin password.",
-          false
-        );
-
-        return;
-
-      }
-
-
-      const button =
-        document.getElementById(
-          "loginButton"
-        );
-
-
-      button.disabled = true;
-
-      button.textContent =
-        "Signing in...";
-
-
-      clearMessage(
-        message
-      );
-
-
-      const result =
-        await supabaseClient.auth
-          .signInWithPassword({
-
-            email:
-              ADMIN_EMAIL,
-
-            password:
-              password
-
-          });
-
-
-      button.disabled = false;
-
-      button.textContent =
-        "Secure Admin Login";
-
-
-      if (result.error) {
-
-        showMessage(
-          message,
-          "Admin login failed: " +
-          result.error.message,
-          false
-        );
-
-        return;
-
-      }
-
-
-      document
-        .getElementById(
-          "adminPassword"
-        )
-        .value = "";
-
-
-      showMessage(
-        message,
-        "Admin login successful.",
-        true
-      );
-
-
-      await checkAdminSession();
-
-    }
+    loginAdmin
   );
 
 
@@ -1190,8 +1214,7 @@ document
     "click",
     async function() {
 
-      await supabaseClient.auth
-        .signOut();
+      await supabaseClient.auth.signOut();
 
       window.location.reload();
 
@@ -1200,21 +1223,26 @@ document
 
 
 /* =========================================================
-   AUTH STATE
+   AUTH STATE CHANGE
    ========================================================= */
 
 supabaseClient.auth
   .onAuthStateChange(
     function() {
 
-      checkAdminSession();
+      setTimeout(
+        function() {
+          checkAdminSession();
+        },
+        0
+      );
 
     }
   );
 
 
 /* =========================================================
-   INITIALIZE
+   INITIAL SESSION CHECK
    ========================================================= */
 
 checkAdminSession();

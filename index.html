@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nigerian Community Continuation Petition – The Gambia</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f4f7f5;
+  color: #17231d;
+  line-height: 1.5;
+}
+
+.container {
+  max-width: 760px;
+  margin: auto;
+  padding: 18px;
+}
+
+.card {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 22px;
+  margin: 14px 0;
+  box-shadow: 0 4px 18px rgba(0,0,0,0.08);
+}
+
+h1 {
+  font-size: 25px;
+  margin-top: 0;
+}
+
+h2 {
+  font-size: 20px;
+}
+
+.introduction {
+  white-space: pre-line;
+}
+
+label {
+  display: block;
+  font-weight: bold;
+  margin: 14px 0 6px;
+}
+
+input,
+select,
+button {
+  width: 100%;
+  padding: 13px;
+  border-radius: 9px;
+  font-size: 16px;
+}
+
+input,
+select {
+  border: 1px solid #cbd5ce;
+  background: #fff;
+}
+
+button {
+  border: none;
+  background: #087443;
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+  margin-top: 18px;
+}
+
+button:disabled {
+  opacity: 0.6;
+}
+
+.admin-button {
+  background: #374151;
+}
+
+.logout-button {
+  background: #9b1c1c;
+}
+
+.message {
+  display: none;
+  margin-top: 15px;
+  padding: 12px;
+  border-radius: 8px;
+}
+
+.success {
+  display: block;
+  background: #e8f7ee;
+  color: #116331;
+}
+
+.error {
+  display: block;
+  background: #fdecec;
+  color: #9b1c1c;
+}
+
+.hidden {
+  display: none;
+}
+
+.small {
+  font-size: 13px;
+  color: #65716b;
+}
+
+.required {
+  color: #b00020;
+}
+
+.stats {
+  font-size: 28px;
+  font-weight: bold;
+  margin-top: 10px;
+}
+
+.table-container {
+  overflow-x: auto;
+  margin-top: 18px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+th,
+td {
+  padding: 8px;
+  border-bottom: 1px solid #ddd;
+  text-align: left;
+  white-space: nowrap;
+}
+
+hr {
+  border: none;
+  border-top: 1px solid #ddd;
+  margin: 25px 0;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <!-- PETITION INTRODUCTION -->
+  <div class="card">
+
+    <h1>🇳🇬 Nigerian Community Continuation Petition – The Gambia</h1>
+
+    <div class="introduction">Welcome to the Nigerian Community Continuation Petition.
+
+This platform is for Nigerians living in The Gambia who wish to support the continuation of a united, inclusive and representative Nigerian Community in The Gambia, with the participation and collective interests of Nigerians and their ethnic communities.
+
+Signing this petition is your voice for the Nigerian Community in The Gambia. Your signature demonstrates your support and helps make the collective voice of Nigerians heard.
+
+Please provide your accurate information and sign the petition only once. Your information will be recorded as part of the petition support database.</div>
+
+  </div>
+
+
+  <!-- PUBLIC PETITION FORM -->
+  <div class="card">
+
+    <h2>Petition Supporter Registration</h2>
+
+    <form id="petitionForm">
+
+      <label for="full_name">
+        Full Name <span class="required">*</span>
+      </label>
+
+      <input
+        id="full_name"
+        type="text"
+        required
+        autocomplete="name"
+        placeholder="Enter your full name"
+      >
+
+
+      <label for="nigerian_state">
+        Nigerian State <span class="required">*</span>
+      </label>
+
+      <select id="nigerian_state" required>
+        <option value="">Select your Nigerian State</option>
+      </select>
+
+
+      <label for="local_government_area">
+        Local Government Area (LGA) <span class="required">*</span>
+      </label>
+
+      <input
+        id="local_government_area"
+        type="text"
+        required
+        placeholder="Enter your LGA"
+      >
+
+
+      <label for="ethnic_association">
+        Ethnic Association / Community <span class="required">*</span>
+      </label>
+
+      <input
+        id="ethnic_association"
+        type="text"
+        required
+        placeholder="e.g. Yoruba Community, Igbo Association"
+      >
+
+
+      <label for="phone_number">
+        Phone Number <span class="required">*</span>
+      </label>
+
+      <input
+        id="phone_number"
+        type="tel"
+        required
+        autocomplete="tel"
+        placeholder="Enter your phone number"
+      >
+
+
+      <label for="email">
+        Sign-in Email <span class="required">*</span>
+      </label>
+
+      <input
+        id="email"
+        type="email"
+        required
+        autocomplete="email"
+        placeholder="Enter your email address"
+      >
+
+
+      <button id="submitButton" type="submit">
+        Sign the Petition
+      </button>
+
+      <div id="formMessage" class="message"></div>
+
+    </form>
+
+    <p class="small">
+      Your registration date and time are recorded automatically.
+    </p>
+
+  </div>
+
+
+  <!-- ADMIN -->
+  <div class="card">
+
+    <h2>Administrator</h2>
+
+    <p class="small">
+      Administrator access is restricted to the authorized petition administrator.
+    </p>
+
+    <button id="loginButton" class="admin-button">
+      Admin Login
+    </button>
+
+    <div id="loginMessage" class="message"></div>
+
+
+    <!-- ADMIN DASHBOARD -->
+    <div id="adminPanel" class="hidden">
+
+      <hr>
+
+      <h2>Petition Database</h2>
+
+      <div id="supporterCount" class="stats">
+        0
+      </div>
+
+      <div class="small">
+        Total supporters
+      </div>
+
+
+      <input
+        id="searchInput"
+        type="text"
+        placeholder="Search supporters..."
+        style="margin-top:15px;"
+      >
+
+
+      <button id="refreshButton" class="admin-button">
+        Refresh Database
+      </button>
+
+
+      <div class="table-container">
+
+        <table>
+
+          <thead>
+
+            <tr>
+              <th>Name</th>
+              <th>State</th>
+              <th>LGA</th>
+              <th>Community</th>
+              <th>Phone</th>
+              <th>Email</th>
+              <th>Date</th>
+            </tr>
+
+          </thead>
+
+          <tbody id="supporterRows"></tbody>
+
+        </table>
+
+      </div>
+
+
+      <button id="logoutButton" class="logout-button">
+        Logout
+      </button>
+
+    </div>
+
+  </div>
+
+</div>
+
+
+<script>
+
+/* =========================================================
+   SUPABASE CONNECTION
+   ========================================================= */
+
+const SUPABASE_URL =
+  "https://agshdquawiunbjjnkhvi.supabase.co";
+
+const SUPABASE_PUBLISHABLE_KEY =
+  "sb_publishable_6ELZFZPO0gmb6CzpU6nDSw_IsIlJb4v";
+
+const ADMIN_EMAIL =
+  "iworimathomas@ymail.com";
+
+const supabaseClient =
+  supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_PUBLISHABLE_KEY
+  );
+
+
+/* =========================================================
+   NIGERIAN STATES
+   ========================================================= */
+
+const states = [
+  "Abia",
+  "Adamawa",
+  "Akwa Ibom",
+  "Anambra",
+  "Bauchi",
+  "Bayelsa",
+  "Benue",
+  "Borno",
+  "Cross River",
+  "Delta",
+  "Ebonyi",
+  "Edo",
+  "Ekiti",
+  "Enugu",
+  "Gombe",
+  "Imo",
+  "Jigawa",
+  "Kaduna",
+  "Kano",
+  "Katsina",
+  "Kebbi",
+  "Kogi",
+  "Kwara",
+  "Lagos",
+  "Nasarawa",
+  "Niger",
+  "Ogun",
+  "Ondo",
+  "Osun",
+  "Oyo",
+  "Plateau",
+  "Rivers",
+  "Sokoto",
+  "Taraba",
+  "Yobe",
+  "Zamfara",
+  "Federal Capital Territory (FCT)"
+];
+
+const stateSelect =
+  document.getElementById("nigerian_state");
+
+states.forEach(function(state) {
+
+  const option =
+    document.createElement("option");
+
+  option.value = state;
+  option.textContent = state;
+
+  stateSelect.appendChild(option);
+
+});
+
+
+/* =========================================================
+   HELPERS
+   ========================================================= */
+
+function showMessage(element, text, success) {
+
+  element.textContent = text;
+
+  element.className =
+    "message " +
+    (success ? "success" : "error");
+
+}
+
+
+function escapeHTML(value) {
+
+  return String(value ?? "")
+    .replace(/[&<>"']/g, function(character) {
+
+      const replacements = {
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#039;"
+      };
+
+      return replacements[character];
+
+    });
+
+}
+
+
+/* =========================================================
+   PETITION SUBMISSION
+   ========================================================= */
+
+document
+  .getElementById("petitionForm")
+  .addEventListener("submit", async function(event) {
+
+    event.preventDefault();
+
+    const button =
+      document.getElementById("submitButton");
+
+    const message =
+      document.getElementById("formMessage");
+
+    button.disabled = true;
+
+    button.textContent = "Submitting...";
+
+
+    const record = {
+
+      full_name:
+        document
+          .getElementById("full_name")
+          .value
+          .trim(),
+
+      nigerian_state:
+        document
+          .getElementById("nigerian_state")
+          .value,
+
+      local_government_area:
+        document
+          .getElementById("local_government_area")
+          .value
+          .trim(),
+
+      ethnic_association:
+        document
+          .getElementById("ethnic_association")
+          .value
+          .trim(),
+
+      phone_number:
+        document
+          .getElementById("phone_number")
+          .value
+          .trim(),
+
+      email:
+        document
+          .getElementById("email")
+          .value
+          .trim()
+          .toLowerCase()
+
+    };
+
+
+    const result =
+      await supabaseClient
+        .from("petition_supporters")
+        .insert(record);
+
+
+    if (result.error) {
+
+      showMessage(
+        message,
+        "Submission failed: " +
+        result.error.message,
+        false
+      );
+
+    } else {
+
+      showMessage(
+        message,
+        "Submission successful. Thank you for supporting the Nigerian Community Continuation Petition.",
+        true
+      );
+
+      document
+        .getElementById("petitionForm")
+        .reset();
+
+    }
+
+
+    button.disabled = false;
+
+    button.textContent =
+      "Sign the Petition";
+
+  });
+
+
+/* =========================================================
+   ADMIN DATA
+   ========================================================= */
+
+let allSupporters = [];
+
+
+async function loadSupporters() {
+
+  const result =
+    await supabaseClient
+      .from("petition_supporters")
+      .select(
+        "full_name,nigerian_state,local_government_area,ethnic_association,phone_number,email,created_at"
+      )
+      .order(
+        "created_at",
+        { ascending: false }
+      );
+
+
+  if (result.error) {
+
+    document.getElementById("supporterRows")
+      .innerHTML =
+      "<tr><td colspan='7'>Unable to load database.</td></tr>";
+
+    return;
+
+  }
+
+
+  allSupporters =
+    result.data || [];
+
+  renderSupporters(allSupporters);
+
+}
+
+
+function renderSupporters(data) {
+
+  document.getElementById("supporterCount")
+    .textContent =
+    data.length;
+
+
+  const rows =
+    document.getElementById("supporterRows");
+
+
+  rows.innerHTML =
+    data.map(function(item) {
+
+      return `
+        <tr>
+
+          <td>${escapeHTML(item.full_name)}</td>
+
+          <td>${escapeHTML(item.nigerian_state)}</td>
+
+          <td>${escapeHTML(item.local_government_area)}</td>
+
+          <td>${escapeHTML(item.ethnic_association)}</td>
+
+          <td>${escapeHTML(item.phone_number)}</td>
+
+          <td>${escapeHTML(item.email)}</td>
+
+          <td>
+            ${escapeHTML(
+              new Date(item.created_at)
+                .toLocaleString()
+            )}
+          </td>
+
+        </tr>
+      `;
+
+    }).join("");
+
+}
+
+
+/* =========================================================
+   SEARCH
+   ========================================================= */
+
+document
+  .getElementById("searchInput")
+  .addEventListener("input", function(event) {
+
+    const query =
+      event.target.value
+        .toLowerCase()
+        .trim();
+
+
+    if (!query) {
+
+      renderSupporters(allSupporters);
+
+      return;
+
+    }
+
+
+    const filtered =
+      allSupporters.filter(function(item) {
+
+        return Object.values(item)
+          .some(function(value) {
+
+            return String(value ?? "")
+              .toLowerCase()
+              .includes(query);
+
+          });
+
+      });
+
+
+    renderSupporters(filtered);
+
+  });
+
+
+/* =========================================================
+   REFRESH DATABASE
+   ========================================================= */
+
+document
+  .getElementById("refreshButton")
+  .addEventListener(
+    "click",
+    loadSupporters
+  );
+
+
+/* =========================================================
+   ADMIN AUTHENTICATION
+   ========================================================= */
+
+async function checkAdminSession() {
+
+  const result =
+    await supabaseClient.auth.getSession();
+
+  const session =
+    result.data.session;
+
+
+  if (
+    session &&
+    session.user &&
+    session.user.email &&
+    session.user.email.toLowerCase() ===
+      ADMIN_EMAIL.toLowerCase()
+  ) {
+
+    document
+      .getElementById("adminPanel")
+      .classList.remove("hidden");
+
+    document
+      .getElementById("loginButton")
+      .classList.add("hidden");
+
+    loadSupporters();
+
+  } else {
+
+    document
+      .getElementById("adminPanel")
+      .classList.add("hidden");
+
+    document
+      .getElementById("loginButton")
+      .classList.remove("hidden");
+
+  }
+
+}
+
+
+/* =========================================================
+   ADMIN LOGIN
+   ========================================================= */
+
+document
+  .getElementById("loginButton")
+  .addEventListener(
+    "click",
+    async function() {
+
+      const message =
+        document.getElementById("loginMessage");
+
+
+      const result =
+        await supabaseClient.auth.signInWithOtp({
+
+          email: ADMIN_EMAIL,
+
+          options: {
+
+            emailRedirectTo:
+              window.location.origin +
+              window.location.pathname
+
+          }
+
+        });
+
+
+      if (result.error) {
+
+        showMessage(
+          message,
+          result.error.message,
+          false
+        );
+
+      } else {
+
+        showMessage(
+          message,
+          "A secure admin login link has been sent to " +
+          ADMIN_EMAIL +
+          ".",
+          true
+        );
+
+      }
+
+    }
+  );
+
+
+/* =========================================================
+   ADMIN LOGOUT
+   ========================================================= */
+
+document
+  .getElementById("logoutButton")
+  .addEventListener(
+    "click",
+    async function() {
+
+      await supabaseClient.auth.signOut();
+
+      window.location.reload();
+
+    }
+  );
+
+
+/* =========================================================
+   AUTH STATE
+   ========================================================= */
+
+supabaseClient.auth.onAuthStateChange(
+  function() {
+
+    checkAdminSession();
+
+  }
+);
+
+
+/* =========================================================
+   INITIALIZE
+   ========================================================= */
+
+checkAdminSession();
+
+</script>
+
+</body>
+</html>

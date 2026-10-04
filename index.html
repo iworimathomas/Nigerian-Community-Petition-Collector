@@ -3,6 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#087443">
+
 <title>Nigerian Community Continuation Petition – The Gambia</title>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -79,10 +81,15 @@ button {
 
 button:disabled {
   opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .admin-button {
   background: #374151;
+}
+
+.secondary-button {
+  background: #52606d;
 }
 
 .logout-button {
@@ -94,6 +101,7 @@ button:disabled {
   margin-top: 15px;
   padding: 12px;
   border-radius: 8px;
+  word-break: break-word;
 }
 
 .success {
@@ -109,7 +117,7 @@ button:disabled {
 }
 
 .hidden {
-  display: none;
+  display: none !important;
 }
 
 .small {
@@ -151,6 +159,20 @@ hr {
   border-top: 1px solid #ddd;
   margin: 25px 0;
 }
+
+.admin-status {
+  background: #eef2f0;
+  padding: 10px;
+  border-radius: 8px;
+  margin-top: 12px;
+  font-size: 14px;
+}
+
+.loading {
+  text-align: center;
+  padding: 15px;
+  color: #65716b;
+}
 </style>
 </head>
 
@@ -158,7 +180,10 @@ hr {
 
 <div class="container">
 
-  <!-- PETITION INTRODUCTION -->
+  <!-- =====================================================
+       PETITION INTRODUCTION
+       ===================================================== -->
+
   <div class="card">
 
     <h1>🇳🇬 Nigerian Community Continuation Petition – The Gambia</h1>
@@ -174,7 +199,10 @@ Please provide your accurate information and sign the petition only once. Your i
   </div>
 
 
-  <!-- PUBLIC PETITION FORM -->
+  <!-- =====================================================
+       PUBLIC PETITION FORM
+       ===================================================== -->
+
   <div class="card">
 
     <h2>Petition Supporter Registration</h2>
@@ -268,7 +296,10 @@ Please provide your accurate information and sign the petition only once. Your i
   </div>
 
 
-  <!-- ADMIN -->
+  <!-- =====================================================
+       ADMINISTRATOR
+       ===================================================== -->
+
   <div class="card">
 
     <h2>Administrator</h2>
@@ -277,19 +308,86 @@ Please provide your accurate information and sign the petition only once. Your i
       Administrator access is restricted to the authorized petition administrator.
     </p>
 
-    <button id="loginButton" class="admin-button">
-      Admin Login
-    </button>
 
-    <div id="loginMessage" class="message"></div>
+    <!-- ===================================================
+         ADMIN LOGIN FORM
+         =================================================== -->
+
+    <div id="adminLoginForm">
+
+      <label for="adminEmail">
+        Admin Email
+      </label>
+
+      <input
+        id="adminEmail"
+        type="email"
+        value="iworimathomas@ymail.com"
+        readonly
+      >
 
 
-    <!-- ADMIN DASHBOARD -->
+      <label for="adminPassword">
+        Admin Password
+      </label>
+
+      <input
+        id="adminPassword"
+        type="password"
+        autocomplete="current-password"
+        placeholder="Enter your admin password"
+      >
+
+
+      <button
+        id="loginButton"
+        class="admin-button"
+        type="button"
+      >
+        Secure Admin Login
+      </button>
+
+
+      <button
+        id="magicLinkButton"
+        class="secondary-button"
+        type="button"
+      >
+        Use Email Magic Link Instead
+      </button>
+
+
+      <button
+        id="resetPasswordButton"
+        class="secondary-button"
+        type="button"
+      >
+        Reset Admin Password
+      </button>
+
+
+      <div id="loginMessage" class="message"></div>
+
+    </div>
+
+
+    <!-- ===================================================
+         ADMIN DASHBOARD
+         =================================================== -->
+
     <div id="adminPanel" class="hidden">
 
       <hr>
 
       <h2>Petition Database</h2>
+
+      <div class="admin-status">
+        Logged in as:
+        <strong id="loggedInAdmin">
+          iworimathomas@ymail.com
+        </strong>
+      </div>
+
 
       <div id="supporterCount" class="stats">
         0
@@ -308,9 +406,27 @@ Please provide your accurate information and sign the petition only once. Your i
       >
 
 
-      <button id="refreshButton" class="admin-button">
+      <button
+        id="refreshButton"
+        class="admin-button"
+        type="button"
+      >
         Refresh Database
       </button>
+
+
+      <div
+        id="databaseMessage"
+        class="message"
+      ></div>
+
+
+      <div
+        id="loadingMessage"
+        class="loading hidden"
+      >
+        Loading petition database...
+      </div>
 
 
       <div class="table-container">
@@ -338,7 +454,11 @@ Please provide your accurate information and sign the petition only once. Your i
       </div>
 
 
-      <button id="logoutButton" class="logout-button">
+      <button
+        id="logoutButton"
+        class="logout-button"
+        type="button"
+      >
         Logout
       </button>
 
@@ -363,6 +483,7 @@ const SUPABASE_PUBLISHABLE_KEY =
 
 const ADMIN_EMAIL =
   "iworimathomas@ymail.com";
+
 
 const supabaseClient =
   supabase.createClient(
@@ -415,8 +536,10 @@ const states = [
   "Federal Capital Territory (FCT)"
 ];
 
+
 const stateSelect =
   document.getElementById("nigerian_state");
+
 
 states.forEach(function(state) {
 
@@ -442,6 +565,15 @@ function showMessage(element, text, success) {
   element.className =
     "message " +
     (success ? "success" : "error");
+
+}
+
+
+function clearMessage(element) {
+
+  element.textContent = "";
+
+  element.className = "message";
 
 }
 
@@ -481,6 +613,7 @@ document
 
     const message =
       document.getElementById("formMessage");
+
 
     button.disabled = true;
 
@@ -551,6 +684,7 @@ document
         true
       );
 
+
       document
         .getElementById("petitionForm")
         .reset();
@@ -575,6 +709,17 @@ let allSupporters = [];
 
 async function loadSupporters() {
 
+  const loading =
+    document.getElementById("loadingMessage");
+
+  const databaseMessage =
+    document.getElementById("databaseMessage");
+
+  loading.classList.remove("hidden");
+
+  clearMessage(databaseMessage);
+
+
   const result =
     await supabaseClient
       .from("petition_supporters")
@@ -587,11 +732,21 @@ async function loadSupporters() {
       );
 
 
+  loading.classList.add("hidden");
+
+
   if (result.error) {
 
     document.getElementById("supporterRows")
       .innerHTML =
       "<tr><td colspan='7'>Unable to load database.</td></tr>";
+
+    showMessage(
+      databaseMessage,
+      "Unable to load database: " +
+      result.error.message,
+      false
+    );
 
     return;
 
@@ -615,6 +770,16 @@ function renderSupporters(data) {
 
   const rows =
     document.getElementById("supporterRows");
+
+
+  if (!data.length) {
+
+    rows.innerHTML =
+      "<tr><td colspan='7'>No petition supporters found.</td></tr>";
+
+    return;
+
+  }
 
 
   rows.innerHTML =
@@ -731,10 +896,15 @@ async function checkAdminSession() {
       .classList.remove("hidden");
 
     document
-      .getElementById("loginButton")
+      .getElementById("adminLoginForm")
       .classList.add("hidden");
 
-    loadSupporters();
+    document
+      .getElementById("loggedInAdmin")
+      .textContent =
+      session.user.email;
+
+    await loadSupporters();
 
   } else {
 
@@ -743,7 +913,7 @@ async function checkAdminSession() {
       .classList.add("hidden");
 
     document
-      .getElementById("loginButton")
+      .getElementById("adminLoginForm")
       .classList.remove("hidden");
 
   }
@@ -752,7 +922,7 @@ async function checkAdminSession() {
 
 
 /* =========================================================
-   ADMIN LOGIN
+   PASSWORD ADMIN LOGIN
    ========================================================= */
 
 document
@@ -763,6 +933,106 @@ document
 
       const message =
         document.getElementById("loginMessage");
+
+      const password =
+        document
+          .getElementById("adminPassword")
+          .value;
+
+
+      if (!password) {
+
+        showMessage(
+          message,
+          "Please enter the admin password.",
+          false
+        );
+
+        return;
+
+      }
+
+
+      const button =
+        document.getElementById("loginButton");
+
+
+      button.disabled = true;
+
+      button.textContent =
+        "Signing in...";
+
+
+      const result =
+        await supabaseClient.auth.signInWithPassword({
+
+          email: ADMIN_EMAIL,
+
+          password: password
+
+        });
+
+
+      button.disabled = false;
+
+      button.textContent =
+        "Secure Admin Login";
+
+
+      if (result.error) {
+
+        showMessage(
+          message,
+          "Admin login failed: " +
+          result.error.message,
+          false
+        );
+
+        return;
+
+      }
+
+
+      document
+        .getElementById("adminPassword")
+        .value = "";
+
+
+      showMessage(
+        message,
+        "Admin login successful.",
+        true
+      );
+
+
+      await checkAdminSession();
+
+    }
+  );
+
+
+/* =========================================================
+   EMAIL MAGIC-LINK FALLBACK
+   ========================================================= */
+
+document
+  .getElementById("magicLinkButton")
+  .addEventListener(
+    "click",
+    async function() {
+
+      const message =
+        document.getElementById("loginMessage");
+
+
+      const button =
+        document.getElementById("magicLinkButton");
+
+
+      button.disabled = true;
+
+      button.textContent =
+        "Sending secure link...";
 
 
       const result =
@@ -781,6 +1051,12 @@ document
         });
 
 
+      button.disabled = false;
+
+      button.textContent =
+        "Use Email Magic Link Instead";
+
+
       if (result.error) {
 
         showMessage(
@@ -794,6 +1070,72 @@ document
         showMessage(
           message,
           "A secure admin login link has been sent to " +
+          ADMIN_EMAIL +
+          ".",
+          true
+        );
+
+      }
+
+    }
+  );
+
+
+/* =========================================================
+   PASSWORD RESET
+   ========================================================= */
+
+document
+  .getElementById("resetPasswordButton")
+  .addEventListener(
+    "click",
+    async function() {
+
+      const message =
+        document.getElementById("loginMessage");
+
+
+      const button =
+        document.getElementById("resetPasswordButton");
+
+
+      button.disabled = true;
+
+      button.textContent =
+        "Sending reset link...";
+
+
+      const result =
+        await supabaseClient.auth
+          .resetPasswordForEmail(
+            ADMIN_EMAIL,
+            {
+              redirectTo:
+                window.location.origin +
+                window.location.pathname
+            }
+          );
+
+
+      button.disabled = false;
+
+      button.textContent =
+        "Reset Admin Password";
+
+
+      if (result.error) {
+
+        showMessage(
+          message,
+          result.error.message,
+          false
+        );
+
+      } else {
+
+        showMessage(
+          message,
+          "If password recovery is enabled for this admin account, a password reset link has been sent to " +
           ADMIN_EMAIL +
           ".",
           true

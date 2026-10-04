@@ -23,7 +23,7 @@ body {
 }
 
 .container {
-  max-width: 760px;
+  max-width: 800px;
   margin: auto;
   padding: 18px;
 }
@@ -86,10 +86,6 @@ button:disabled {
 
 .admin-button {
   background: #374151;
-}
-
-.secondary-button {
-  background: #52606d;
 }
 
 .logout-button {
@@ -172,6 +168,14 @@ hr {
   text-align: center;
   padding: 15px;
   color: #65716b;
+}
+
+.notice {
+  background: #f1f7f3;
+  border-left: 4px solid #087443;
+  padding: 12px;
+  border-radius: 6px;
+  margin-top: 15px;
 }
 </style>
 </head>
@@ -289,9 +293,11 @@ Please provide your accurate information and sign the petition only once. Your i
 
     </form>
 
-    <p class="small">
+    <div class="notice">
+      <strong>Your information:</strong><br>
       Your registration date and time are recorded automatically.
-    </p>
+      Your petition information is stored in the petition support database.
+    </div>
 
   </div>
 
@@ -311,6 +317,7 @@ Please provide your accurate information and sign the petition only once. Your i
 
     <!-- ===================================================
          ADMIN LOGIN FORM
+         PASSWORD ONLY
          =================================================== -->
 
     <div id="adminLoginForm">
@@ -345,24 +352,6 @@ Please provide your accurate information and sign the petition only once. Your i
         type="button"
       >
         Secure Admin Login
-      </button>
-
-
-      <button
-        id="magicLinkButton"
-        class="secondary-button"
-        type="button"
-      >
-        Use Email Magic Link Instead
-      </button>
-
-
-      <button
-        id="resetPasswordButton"
-        class="secondary-button"
-        type="button"
-      >
-        Reset Admin Password
       </button>
 
 
@@ -401,7 +390,7 @@ Please provide your accurate information and sign the petition only once. Your i
       <input
         id="searchInput"
         type="text"
-        placeholder="Search supporters..."
+        placeholder="Search by name, state, LGA, association, phone or email..."
         style="margin-top:15px;"
       >
 
@@ -415,6 +404,15 @@ Please provide your accurate information and sign the petition only once. Your i
       </button>
 
 
+      <button
+        id="logoutButton"
+        class="logout-button"
+        type="button"
+      >
+        Logout
+      </button>
+
+
       <div
         id="databaseMessage"
         class="message"
@@ -425,7 +423,7 @@ Please provide your accurate information and sign the petition only once. Your i
         id="loadingMessage"
         class="loading hidden"
       >
-        Loading petition database...
+        Loading petition supporters...
       </div>
 
 
@@ -434,33 +432,28 @@ Please provide your accurate information and sign the petition only once. Your i
         <table>
 
           <thead>
-
             <tr>
-              <th>Name</th>
+              <th>Full Name</th>
               <th>State</th>
               <th>LGA</th>
-              <th>Community</th>
+              <th>Ethnic Association / Community</th>
               <th>Phone</th>
               <th>Email</th>
-              <th>Date</th>
+              <th>Registered</th>
             </tr>
-
           </thead>
 
-          <tbody id="supporterRows"></tbody>
+          <tbody id="supporterRows">
+            <tr>
+              <td colspan="7">
+                No data loaded.
+              </td>
+            </tr>
+          </tbody>
 
         </table>
 
       </div>
-
-
-      <button
-        id="logoutButton"
-        class="logout-button"
-        type="button"
-      >
-        Logout
-      </button>
 
     </div>
 
@@ -472,7 +465,7 @@ Please provide your accurate information and sign the petition only once. Your i
 <script>
 
 /* =========================================================
-   SUPABASE CONNECTION
+   SUPABASE CONFIGURATION
    ========================================================= */
 
 const SUPABASE_URL =
@@ -486,7 +479,7 @@ const ADMIN_EMAIL =
 
 
 const supabaseClient =
-  supabase.createClient(
+  window.supabase.createClient(
     SUPABASE_URL,
     SUPABASE_PUBLISHABLE_KEY
   );
@@ -496,7 +489,7 @@ const supabaseClient =
    NIGERIAN STATES
    ========================================================= */
 
-const states = [
+const NigerianStates = [
   "Abia",
   "Adamawa",
   "Akwa Ibom",
@@ -541,7 +534,7 @@ const stateSelect =
   document.getElementById("nigerian_state");
 
 
-states.forEach(function(state) {
+NigerianStates.forEach(function(state) {
 
   const option =
     document.createElement("option");
@@ -555,16 +548,21 @@ states.forEach(function(state) {
 
 
 /* =========================================================
-   HELPERS
+   MESSAGE FUNCTIONS
    ========================================================= */
 
-function showMessage(element, text, success) {
+function showMessage(
+  element,
+  message,
+  success
+) {
 
-  element.textContent = text;
+  element.textContent = message;
 
   element.className =
-    "message " +
-    (success ? "success" : "error");
+    success
+      ? "message success"
+      : "message error";
 
 }
 
@@ -573,131 +571,182 @@ function clearMessage(element) {
 
   element.textContent = "";
 
-  element.className = "message";
-
-}
-
-
-function escapeHTML(value) {
-
-  return String(value ?? "")
-    .replace(/[&<>"']/g, function(character) {
-
-      const replacements = {
-        "&": "&amp;",
-        "<": "&lt;",
-        ">": "&gt;",
-        '"': "&quot;",
-        "'": "&#039;"
-      };
-
-      return replacements[character];
-
-    });
+  element.className =
+    "message";
 
 }
 
 
 /* =========================================================
-   PETITION SUBMISSION
+   HTML ESCAPE
+   Protects administrator table output.
+   ========================================================= */
+
+function escapeHTML(value) {
+
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+
+}
+
+
+/* =========================================================
+   PUBLIC PETITION SUBMISSION
    ========================================================= */
 
 document
   .getElementById("petitionForm")
-  .addEventListener("submit", async function(event) {
+  .addEventListener(
+    "submit",
+    async function(event) {
 
-    event.preventDefault();
-
-    const button =
-      document.getElementById("submitButton");
-
-    const message =
-      document.getElementById("formMessage");
+      event.preventDefault();
 
 
-    button.disabled = true;
+      const button =
+        document.getElementById(
+          "submitButton"
+        );
 
-    button.textContent = "Submitting...";
+      const message =
+        document.getElementById(
+          "formMessage"
+        );
 
 
-    const record = {
-
-      full_name:
+      const fullName =
         document
           .getElementById("full_name")
           .value
-          .trim(),
+          .trim();
 
-      nigerian_state:
+
+      const nigerianState =
         document
           .getElementById("nigerian_state")
-          .value,
+          .value
+          .trim();
 
-      local_government_area:
+
+      const localGovernmentArea =
         document
           .getElementById("local_government_area")
           .value
-          .trim(),
+          .trim();
 
-      ethnic_association:
+
+      const ethnicAssociation =
         document
           .getElementById("ethnic_association")
           .value
-          .trim(),
+          .trim();
 
-      phone_number:
+
+      const phoneNumber =
         document
           .getElementById("phone_number")
           .value
-          .trim(),
+          .trim();
 
-      email:
+
+      const email =
         document
           .getElementById("email")
           .value
-          .trim()
-          .toLowerCase()
-
-    };
+          .trim();
 
 
-    const result =
-      await supabaseClient
-        .from("petition_supporters")
-        .insert(record);
+      if (
+        !fullName ||
+        !nigerianState ||
+        !localGovernmentArea ||
+        !ethnicAssociation ||
+        !phoneNumber ||
+        !email
+      ) {
+
+        showMessage(
+          message,
+          "Please complete all required fields.",
+          false
+        );
+
+        return;
+
+      }
 
 
-    if (result.error) {
+      button.disabled = true;
 
-      showMessage(
-        message,
-        "Submission failed: " +
-        result.error.message,
-        false
-      );
-
-    } else {
-
-      showMessage(
-        message,
-        "Submission successful. Thank you for supporting the Nigerian Community Continuation Petition.",
-        true
-      );
+      button.textContent =
+        "Submitting...";
 
 
-      document
-        .getElementById("petitionForm")
-        .reset();
+      clearMessage(message);
+
+
+      const result =
+        await supabaseClient
+          .from("petition_supporters")
+          .insert([
+            {
+              full_name:
+                fullName,
+
+              nigerian_state:
+                nigerianState,
+
+              local_government_area:
+                localGovernmentArea,
+
+              ethnic_association:
+                ethnicAssociation,
+
+              phone_number:
+                phoneNumber,
+
+              email:
+                email
+            }
+          ]);
+
+
+      if (result.error) {
+
+        showMessage(
+          message,
+          "Submission failed: " +
+          result.error.message,
+          false
+        );
+
+      } else {
+
+        showMessage(
+          message,
+          "Submission successful. Thank you for supporting the Nigerian Community Continuation Petition.",
+          true
+        );
+
+
+        document
+          .getElementById("petitionForm")
+          .reset();
+
+      }
+
+
+      button.disabled = false;
+
+      button.textContent =
+        "Sign the Petition";
 
     }
-
-
-    button.disabled = false;
-
-    button.textContent =
-      "Sign the Petition";
-
-  });
+  );
 
 
 /* =========================================================
@@ -710,36 +759,53 @@ let allSupporters = [];
 async function loadSupporters() {
 
   const loading =
-    document.getElementById("loadingMessage");
+    document.getElementById(
+      "loadingMessage"
+    );
 
   const databaseMessage =
-    document.getElementById("databaseMessage");
+    document.getElementById(
+      "databaseMessage"
+    );
 
-  loading.classList.remove("hidden");
 
-  clearMessage(databaseMessage);
+  loading.classList.remove(
+    "hidden"
+  );
+
+  clearMessage(
+    databaseMessage
+  );
 
 
   const result =
     await supabaseClient
       .from("petition_supporters")
       .select(
-        "full_name,nigerian_state,local_government_area,ethnic_association,phone_number,email,created_at"
+        "id,full_name,nigerian_state,local_government_area,ethnic_association,phone_number,email,created_at"
       )
       .order(
         "created_at",
-        { ascending: false }
+        {
+          ascending: false
+        }
       );
 
 
-  loading.classList.add("hidden");
+  loading.classList.add(
+    "hidden"
+  );
 
 
   if (result.error) {
 
-    document.getElementById("supporterRows")
+    document
+      .getElementById(
+        "supporterRows"
+      )
       .innerHTML =
       "<tr><td colspan='7'>Unable to load database.</td></tr>";
+
 
     showMessage(
       databaseMessage,
@@ -756,20 +822,34 @@ async function loadSupporters() {
   allSupporters =
     result.data || [];
 
-  renderSupporters(allSupporters);
+
+  renderSupporters(
+    allSupporters
+  );
 
 }
 
 
-function renderSupporters(data) {
+/* =========================================================
+   RENDER SUPPORTERS
+   ========================================================= */
 
-  document.getElementById("supporterCount")
+function renderSupporters(
+  data
+) {
+
+  document
+    .getElementById(
+      "supporterCount"
+    )
     .textContent =
     data.length;
 
 
   const rows =
-    document.getElementById("supporterRows");
+    document.getElementById(
+      "supporterRows"
+    );
 
 
   if (!data.length) {
@@ -783,34 +863,61 @@ function renderSupporters(data) {
 
 
   rows.innerHTML =
-    data.map(function(item) {
+    data
+      .map(function(item) {
 
-      return `
-        <tr>
+        return `
+          <tr>
 
-          <td>${escapeHTML(item.full_name)}</td>
+            <td>
+              ${escapeHTML(
+                item.full_name
+              )}
+            </td>
 
-          <td>${escapeHTML(item.nigerian_state)}</td>
+            <td>
+              ${escapeHTML(
+                item.nigerian_state
+              )}
+            </td>
 
-          <td>${escapeHTML(item.local_government_area)}</td>
+            <td>
+              ${escapeHTML(
+                item.local_government_area
+              )}
+            </td>
 
-          <td>${escapeHTML(item.ethnic_association)}</td>
+            <td>
+              ${escapeHTML(
+                item.ethnic_association
+              )}
+            </td>
 
-          <td>${escapeHTML(item.phone_number)}</td>
+            <td>
+              ${escapeHTML(
+                item.phone_number
+              )}
+            </td>
 
-          <td>${escapeHTML(item.email)}</td>
+            <td>
+              ${escapeHTML(
+                item.email
+              )}
+            </td>
 
-          <td>
-            ${escapeHTML(
-              new Date(item.created_at)
-                .toLocaleString()
-            )}
-          </td>
+            <td>
+              ${escapeHTML(
+                new Date(
+                  item.created_at
+                ).toLocaleString()
+              )}
+            </td>
 
-        </tr>
-      `;
+          </tr>
+        `;
 
-    }).join("");
+      })
+      .join("");
 
 }
 
@@ -820,42 +927,58 @@ function renderSupporters(data) {
    ========================================================= */
 
 document
-  .getElementById("searchInput")
-  .addEventListener("input", function(event) {
+  .getElementById(
+    "searchInput"
+  )
+  .addEventListener(
+    "input",
+    function(event) {
 
-    const query =
-      event.target.value
-        .toLowerCase()
-        .trim();
+      const query =
+        event.target.value
+          .toLowerCase()
+          .trim();
 
 
-    if (!query) {
+      if (!query) {
 
-      renderSupporters(allSupporters);
+        renderSupporters(
+          allSupporters
+        );
 
-      return;
+        return;
+
+      }
+
+
+      const filtered =
+        allSupporters.filter(
+          function(item) {
+
+            return Object.values(
+              item
+            ).some(
+              function(value) {
+
+                return String(
+                  value ?? ""
+                )
+                  .toLowerCase()
+                  .includes(query);
+
+              }
+            );
+
+          }
+        );
+
+
+      renderSupporters(
+        filtered
+      );
 
     }
-
-
-    const filtered =
-      allSupporters.filter(function(item) {
-
-        return Object.values(item)
-          .some(function(value) {
-
-            return String(value ?? "")
-              .toLowerCase()
-              .includes(query);
-
-          });
-
-      });
-
-
-    renderSupporters(filtered);
-
-  });
+  );
 
 
 /* =========================================================
@@ -863,7 +986,9 @@ document
    ========================================================= */
 
 document
-  .getElementById("refreshButton")
+  .getElementById(
+    "refreshButton"
+  )
   .addEventListener(
     "click",
     loadSupporters
@@ -879,6 +1004,7 @@ async function checkAdminSession() {
   const result =
     await supabaseClient.auth.getSession();
 
+
   const session =
     result.data.session;
 
@@ -892,29 +1018,51 @@ async function checkAdminSession() {
   ) {
 
     document
-      .getElementById("adminPanel")
-      .classList.remove("hidden");
+      .getElementById(
+        "adminPanel"
+      )
+      .classList.remove(
+        "hidden"
+      );
+
 
     document
-      .getElementById("adminLoginForm")
-      .classList.add("hidden");
+      .getElementById(
+        "adminLoginForm"
+      )
+      .classList.add(
+        "hidden"
+      );
+
 
     document
-      .getElementById("loggedInAdmin")
+      .getElementById(
+        "loggedInAdmin"
+      )
       .textContent =
       session.user.email;
+
 
     await loadSupporters();
 
   } else {
 
     document
-      .getElementById("adminPanel")
-      .classList.add("hidden");
+      .getElementById(
+        "adminPanel"
+      )
+      .classList.add(
+        "hidden"
+      );
+
 
     document
-      .getElementById("adminLoginForm")
-      .classList.remove("hidden");
+      .getElementById(
+        "adminLoginForm"
+      )
+      .classList.remove(
+        "hidden"
+      );
 
   }
 
@@ -922,21 +1070,28 @@ async function checkAdminSession() {
 
 
 /* =========================================================
-   PASSWORD ADMIN LOGIN
+   PASSWORD-ONLY ADMIN LOGIN
    ========================================================= */
 
 document
-  .getElementById("loginButton")
+  .getElementById(
+    "loginButton"
+  )
   .addEventListener(
     "click",
     async function() {
 
       const message =
-        document.getElementById("loginMessage");
+        document.getElementById(
+          "loginMessage"
+        );
+
 
       const password =
         document
-          .getElementById("adminPassword")
+          .getElementById(
+            "adminPassword"
+          )
           .value;
 
 
@@ -954,7 +1109,9 @@ document
 
 
       const button =
-        document.getElementById("loginButton");
+        document.getElementById(
+          "loginButton"
+        );
 
 
       button.disabled = true;
@@ -963,14 +1120,22 @@ document
         "Signing in...";
 
 
+      clearMessage(
+        message
+      );
+
+
       const result =
-        await supabaseClient.auth.signInWithPassword({
+        await supabaseClient.auth
+          .signInWithPassword({
 
-          email: ADMIN_EMAIL,
+            email:
+              ADMIN_EMAIL,
 
-          password: password
+            password:
+              password
 
-        });
+          });
 
 
       button.disabled = false;
@@ -994,7 +1159,9 @@ document
 
 
       document
-        .getElementById("adminPassword")
+        .getElementById(
+          "adminPassword"
+        )
         .value = "";
 
 
@@ -1012,152 +1179,19 @@ document
 
 
 /* =========================================================
-   EMAIL MAGIC-LINK FALLBACK
-   ========================================================= */
-
-document
-  .getElementById("magicLinkButton")
-  .addEventListener(
-    "click",
-    async function() {
-
-      const message =
-        document.getElementById("loginMessage");
-
-
-      const button =
-        document.getElementById("magicLinkButton");
-
-
-      button.disabled = true;
-
-      button.textContent =
-        "Sending secure link...";
-
-
-      const result =
-        await supabaseClient.auth.signInWithOtp({
-
-          email: ADMIN_EMAIL,
-
-          options: {
-
-            emailRedirectTo:
-              window.location.origin +
-              window.location.pathname
-
-          }
-
-        });
-
-
-      button.disabled = false;
-
-      button.textContent =
-        "Use Email Magic Link Instead";
-
-
-      if (result.error) {
-
-        showMessage(
-          message,
-          result.error.message,
-          false
-        );
-
-      } else {
-
-        showMessage(
-          message,
-          "A secure admin login link has been sent to " +
-          ADMIN_EMAIL +
-          ".",
-          true
-        );
-
-      }
-
-    }
-  );
-
-
-/* =========================================================
-   PASSWORD RESET
-   ========================================================= */
-
-document
-  .getElementById("resetPasswordButton")
-  .addEventListener(
-    "click",
-    async function() {
-
-      const message =
-        document.getElementById("loginMessage");
-
-
-      const button =
-        document.getElementById("resetPasswordButton");
-
-
-      button.disabled = true;
-
-      button.textContent =
-        "Sending reset link...";
-
-
-      const result =
-        await supabaseClient.auth
-          .resetPasswordForEmail(
-            ADMIN_EMAIL,
-            {
-              redirectTo:
-                window.location.origin +
-                window.location.pathname
-            }
-          );
-
-
-      button.disabled = false;
-
-      button.textContent =
-        "Reset Admin Password";
-
-
-      if (result.error) {
-
-        showMessage(
-          message,
-          result.error.message,
-          false
-        );
-
-      } else {
-
-        showMessage(
-          message,
-          "If password recovery is enabled for this admin account, a password reset link has been sent to " +
-          ADMIN_EMAIL +
-          ".",
-          true
-        );
-
-      }
-
-    }
-  );
-
-
-/* =========================================================
    ADMIN LOGOUT
    ========================================================= */
 
 document
-  .getElementById("logoutButton")
+  .getElementById(
+    "logoutButton"
+  )
   .addEventListener(
     "click",
     async function() {
 
-      await supabaseClient.auth.signOut();
+      await supabaseClient.auth
+        .signOut();
 
       window.location.reload();
 
@@ -1169,13 +1203,14 @@ document
    AUTH STATE
    ========================================================= */
 
-supabaseClient.auth.onAuthStateChange(
-  function() {
+supabaseClient.auth
+  .onAuthStateChange(
+    function() {
 
-    checkAdminSession();
+      checkAdminSession();
 
-  }
-);
+    }
+  );
 
 
 /* =========================================================
